@@ -1,0 +1,468 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Oziq-ovqat sanitariyasi</title>
+<style>
+  :root{
+    --bg:#f5f7fb;
+    --card:#ffffff;
+    --accent:#5a8cff;
+    --muted:#6b7280;
+    --cell-size:36px;
+    --gap:4px;
+  }
+  *{box-sizing:border-box}
+  
+  html, body{
+    margin:0; padding:0; width:100%; height:100%;
+  }
+  
+  body{
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+      Roboto, "Helvetica Neue", Arial;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color:#0f172a;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+    display:flex; align-items:center; justify-content:center;
+    min-height:100vh;
+  }
+  
+  #startPage{
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    min-height:100vh; padding:20px; text-align:center; color:#fff;
+  }
+  
+  #startPage h1{
+    font-size:48px; font-weight:700; margin:0 0 20px 0; text-shadow:0 2px 10px rgba(0,0,0,0.2);
+  }
+  
+  #startPage p{
+    font-size:18px; margin:0 0 40px 0; opacity:0.95; max-width:600px; line-height:1.6;
+  }
+  
+  #startBtn{
+    background:#fff; color:#667eea; border:0; padding:16px 48px; border-radius:50px;
+    font-size:18px; font-weight:700; cursor:pointer; box-shadow:0 10px 30px rgba(0,0,0,0.2);
+    transition:transform 0.2s, box-shadow 0.2s;
+  }
+  
+  #startBtn:hover{
+    transform:translateY(-2px); box-shadow:0 15px 40px rgba(0,0,0,0.3);
+  }
+  
+  #gamePage{
+    display:none; width:100%; padding:28px;
+  }
+  
+  #gamePage.active{
+    display:flex; flex-direction:column; align-items:flex-start; justify-content:center;
+    min-height:100vh;
+  }
+
+  .wrap{
+    width:100%;
+    max-width:1100px;
+    background:var(--card);
+    border-radius:14px;
+    box-shadow:0 8px 30px rgba(17,24,39,0.08);
+    padding:22px;
+    display:grid;
+    grid-template-columns: 1fr 360px;
+    gap:22px;
+    align-items:start;
+  }
+
+  header{grid-column:1/3; display:flex; align-items:center; gap:12px}
+  header h1{font-size:20px;margin:0}
+  header p{margin:0;color:var(--muted);font-size:13px}
+
+  /* Crossword container */
+  .board {
+    background: linear-gradient(180deg,#fff,#fbfdff);
+    padding:18px;
+    border-radius:10px;
+    border:1px solid rgba(15,23,42,0.04);
+    box-shadow: 0 6px 18px rgba(15,23,42,0.04) inset;
+  }
+
+  .cross-table{
+    border-collapse:collapse;
+    margin: 6px auto;
+    user-select:none;
+  }
+  .cross-table td{
+    width:22px;height:22px;
+    border:1px solid rgba(15,23,42,0.08);
+    vertical-align:middle;
+    text-align:center;
+    padding:0;
+    position:relative;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+
+  /* numbered small label */
+  .cross-table td.num{
+    position:relative;
+  }
+  .cross-table td.num::after{
+    content: attr(data-num);
+    position:absolute;
+    left:2px; top:1px;
+    font-size:10px;
+    color:#0f172a;
+    font-weight:600;
+    opacity:0.85;
+  }
+
+  /* letter cell */
+  .cross-table td.let{
+    background:#fff;
+    border:1px solid #cfd8e6;
+    font-size:14px;
+    font-weight:700;
+    color:#0b1220;
+    text-transform:uppercase;
+    width:36px;height:36px;
+    box-shadow: 0 2px 6px rgba(11,18,32,0.03);
+  }
+
+  /* black cell */
+  .cross-table td.blank{
+    background:#222;
+    border:1px solid #111;
+    width:36px;height:36px;
+  }
+
+  /* hover / focus effect */
+  .cross-table td.let:hover{transform:translateY(-3px); box-shadow:0 12px 28px rgba(13,20,38,0.06)}
+  .cross-table td.let input{
+    width:100%; height:100%; border:0; background:transparent;
+    text-align:center; font-weight:700; font-size:16px; outline:none; text-transform:uppercase;
+    caret-color:var(--accent);
+    color:var(--cell-text,#0b1220);
+    letter-spacing:0;
+  }
+
+  /* side panel with clues */
+  .panel{
+    padding:16px; border-radius:10px; background:linear-gradient(180deg,#fbfdff,#ffffff);
+    border:1px solid rgba(15,23,42,0.03);
+    box-shadow:0 6px 18px rgba(15,23,42,0.03);
+    height:fit-content;
+  }
+  .panel h3{margin:0 0 8px 0; font-size:15px}
+  .clues{font-size:14px; color:var(--muted); line-height:1.5}
+  .clue-group{margin-bottom:12px}
+  .clue{padding:6px 8px; border-radius:8px; background:linear-gradient(180deg,#fff,#fbfdff); margin-bottom:6px; border:1px solid rgba(15,23,42,0.03)}
+  .clue strong{display:inline-block; width:28px; color:var(--accent)}
+  .controls{margin-top:10px; display:flex; gap:8px; flex-wrap:wrap}
+  .btn{
+    border:0; padding:8px 10px; border-radius:8px; cursor:pointer; font-weight:600; font-size:13px;
+    background:var(--accent); color:#fff; box-shadow:0 6px 18px rgba(90,140,255,0.18);
+  }
+  .btn.secondary{background:transparent; color:var(--accent); border:1px solid rgba(90,140,255,0.12); box-shadow:none}
+
+  /* responsive */
+  @media (max-width:1300px){
+    .wrap{grid-template-columns:1fr; padding:14px}
+    .panel{order:2}
+  }
+
+  /* small caption */
+  .caption{font-size:12px;color:var(--muted);margin-top:8px;text-align:center}
+</style>
+</head>
+<body>
+
+<!-- START PAGE -->
+<div id="startPage">
+  <h1>🎓 KROSSVORD</h1>
+  <p>Oziq-ovqat sanitariyasi bo'yicha bilimingizni sinab ko'ring!</p>
+  <button id="startBtn">🎮 O'ynashni boshlash</button>
+</div>
+
+<!-- GAME PAGE -->
+<div id="gamePage">
+<div class="wrap" role="main">
+  <header>
+    <div>
+      <h1>KROSSVORD</h1>
+      <p>Krossvord HTML uslubda tayyorlandi.</p>
+    </div>
+  </header>
+
+  <!-- LEFT: Board -->
+  <div class="board" aria-label="Crossword board">
+    <!-- We'll paste the cleaned table extracted from your Word doc here.
+         Table cells that had letters get class="let" and contain the letter.
+         Numbered cells get class="num" and data-num attribute (visual numbering).
+         Black squares (empty in Word) get class="blank". -->
+    <table class="cross-table" aria-hidden="false" role="grid" cellspacing="0" cellpadding="0"
+           style="margin:6px auto;">
+<!-- START OF EXTRACTED GRID (cleaned) -->
+<tr valign="middle">
+  <td class="blank"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td>
+  <td class="blank"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td>
+  <td class="blank"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td>
+  <td class="num" data-num="3"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td>
+  <td class="blank"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td>
+</tr>
+<tr valign="middle">
+  <td class="blank"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td>
+  <td class="blank"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td>
+  <td class="blank"></td><td class="blank"></td><td class="num" data-num="6"></td>
+  <td class="let"><input type="text" maxlength="1"></td><td class="let"><input type="text" maxlength="1"></td><td class="let"><input type="text" maxlength="1"></td>
+  <td class="blank"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td>
+  <td class="blank"></td><td class="blank"></td>
+</tr>
+<tr valign="middle">
+  <td class="blank"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td>
+  <td class="blank"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td>
+  <td class="blank"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td>
+  <td class="let"><input type="text" maxlength="1"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td>
+  <td class="blank"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td>
+</tr>
+<tr valign="middle">
+  <td class="blank"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td>
+  <td class="blank"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td>
+  <td class="blank"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td>
+  <td class="let"><input type="text" maxlength="1"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td>
+  <td class="blank"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td>
+</tr>
+<tr valign="middle">
+  <td class="blank"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td>
+  <td class="blank"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td>
+  <td class="blank"></td><td class="num" data-num="2"></td><td class="blank"></td><td class="blank"></td>
+  <td class="let"><input type="text" maxlength="1"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td>
+  <td class="blank"></td><td class="blank"></td><td class="blank"></td><td class="num" data-num="10"></td>
+</tr>
+<tr valign="middle">
+  <td class="blank"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td>
+  <td class="blank"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td>
+  <td class="blank"></td><td class="let"><input type="text" maxlength="1"></td><td class="blank"></td><td class="blank"></td>
+  <td class="let"><input type="text" maxlength="1"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td>
+  <td class="num" data-num="4"></td><td class="blank"></td><td class="blank"></td><td class="let"><input type="text" maxlength="1"></td>
+</tr>
+<tr valign="middle">
+  <td class="blank"></td><td class="blank"></td><td class="blank"></td>
+  <td class="num" data-num="9"></td>
+  <td class="blank"></td><td class="blank"></td><td class="blank"></td>
+  <td class="num" data-num="1"></td>
+  <td class="let"><input type="text" maxlength="1"></td><td class="let"><input type="text" maxlength="1"></td><td class="let"><input type="text" maxlength="1"></td><td class="let"><input type="text" maxlength="1"></td>
+  <td class="let"><input type="text" maxlength="1"></td><td class="let"><input type="text" maxlength="1"></td><td class="let"><input type="text" maxlength="1"></td><td class="let"><input type="text" maxlength="1"></td>
+  <td class="let"><input type="text" maxlength="1"></td><td class="let"><input type="text" maxlength="1"></td><td class="blank"></td><td class="let"><input type="text" maxlength="1"></td>
+</tr>
+<tr valign="middle">
+  <td class="blank"></td><td class="blank"></td><td class="blank"></td>
+  <td class="let"><input type="text" maxlength="1"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td>
+  <td class="blank"></td><td class="blank"></td>
+  <td class="let"><input type="text" maxlength="1"></td><td class="blank"></td><td class="blank"></td>
+  <td class="let"><input type="text" maxlength="1"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td>
+  <td class="let"><input type="text" maxlength="1"></td><td class="blank"></td><td class="blank"></td><td class="let"><input type="text" maxlength="1"></td>
+</tr>
+<tr valign="middle">
+  <td class="blank"></td><td class="num" data-num="8"></td>
+  <td class="let"><input type="text" maxlength="1"></td><td class="let"><input type="text" maxlength="1"></td><td class="let"><input type="text" maxlength="1"></td><td class="let"><input type="text" maxlength="1"></td>
+  <td class="let"><input type="text" maxlength="1"></td><td class="let"><input type="text" maxlength="1"></td><td class="let"><input type="text" maxlength="1"></td><td class="let"><input type="text" maxlength="1"></td>
+  <td class="blank"></td><td class="blank"></td><td class="let"><input type="text" maxlength="1"></td><td class="blank"></td>
+  <td class="blank"></td><td class="blank"></td><td class="let"><input type="text" maxlength="1"></td><td class="blank"></td>
+  <td class="blank"></td><td class="let"><input type="text" maxlength="1"></td>
+</tr>
+<tr valign="middle">
+  <td class="blank"></td><td class="blank"></td><td class="blank"></td>
+  <td class="let"><input type="text" maxlength="1"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td>
+  <td class="blank"></td><td class="blank"></td><td class="let"><input type="text" maxlength="1"></td><td class="blank"></td>
+  <td class="blank"></td><td class="let"><input type="text" maxlength="1"></td><td class="blank"></td><td class="blank"></td>
+  <td class="blank"></td><td class="let"><input type="text" maxlength="1"></td><td class="blank"></td><td class="blank"></td><td class="let"><input type="text" maxlength="1"></td>
+</tr>
+<tr valign="middle">
+  <td class="blank"></td><td class="blank"></td><td class="blank"></td>
+  <td class="let"><input type="text" maxlength="1"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td>
+  <td class="blank"></td><td class="blank"></td><td class="let"><input type="text" maxlength="1"></td><td class="blank"></td>
+  <td class="blank"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td>
+  <td class="blank"></td><td class="let"><input type="text" maxlength="1"></td><td class="blank"></td><td class="blank"></td><td class="let"><input type="text" maxlength="1"></td>
+</tr>
+<tr valign="middle">
+  <td class="num" data-num="11"></td><td class="let"><input type="text" maxlength="1"></td><td class="let"><input type="text" maxlength="1"></td><td class="let"><input type="text" maxlength="1"></td>
+  <td class="blank"></td><td class="blank"></td><td class="blank"></td><td class="num" data-num="5"></td>
+  <td class="let"><input type="text" maxlength="1"></td><td class="let"><input type="text" maxlength="1"></td><td class="let"><input type="text" maxlength="1"></td><td class="let"><input type="text" maxlength="1"></td>
+  <td class="let"><input type="text" maxlength="1"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td>
+  <td class="let"><input type="text" maxlength="1"></td><td class="blank"></td><td class="blank"></td><td class="let"><input type="text" maxlength="1"></td>
+</tr>
+<tr valign="middle">
+  <td class="blank"></td><td class="blank"></td><td class="blank"></td><td class="let"><input type="text" maxlength="1"></td>
+  <td class="blank"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td>
+  <td class="blank"></td><td class="let"><input type="text" maxlength="1"></td><td class="blank"></td><td class="blank"></td>
+  <td class="blank"></td><td class="blank"></td><td class="num" data-num="7"></td>
+  <td class="let"><input type="text" maxlength="1"></td><td class="let"><input type="text" maxlength="1"></td><td class="let"><input type="text" maxlength="1"></td><td class="let"><input type="text" maxlength="1"></td><td class="let"><input type="text" maxlength="1"></td>
+</tr>
+<tr valign="middle">
+  <td class="blank"></td><td class="blank"></td><td class="blank"></td><td class="let"><input type="text" maxlength="1"></td>
+  <td class="blank"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td>
+  <td class="blank"></td><td class="let"><input type="text" maxlength="1"></td><td class="blank"></td><td class="blank"></td>
+  <td class="blank"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td>
+  <td class="let"><input type="text" maxlength="1"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td>
+</tr>
+<tr valign="middle">
+  <td class="blank"></td><td class="blank"></td><td class="blank"></td><td class="let"><input type="text" maxlength="1"></td>
+  <td class="blank"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td>
+  <td class="blank"></td><td class="let"><input type="text" maxlength="1"></td><td class="blank"></td><td class="blank"></td>
+  <td class="blank"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td>
+  <td class="let"><input type="text" maxlength="1"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td>
+</tr>
+<tr valign="middle">
+  <td class="blank"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td>
+  <td class="blank"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td>
+  <td class="blank"></td><td class="let"><input type="text" maxlength="1"></td><td class="blank"></td><td class="blank"></td>
+  <td class="blank"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td>
+  <td class="let"><input type="text" maxlength="1"></td><td class="blank"></td><td class="blank"></td><td class="blank"></td>
+</tr>
+<!-- END OF GRID -->
+    </table>
+
+    <div class="caption">Harflarni ajratib ko'rsatish va kiritish uchun katakchalarga bosing. Bu krossvordning HTML versiyasi.</div>
+  </div>
+
+  <!-- RIGHT: Clues & controls -->
+  <aside class="panel" aria-label="Clues" style="position: sticky; top: 20px;">
+    <h3>Savollar</h3>
+    <div class="clues">
+      <div class="clue-group">
+        <!-- In the original doc the explicit clue text wasn't embedded in the extracted table.
+             If you want the exact clue texts placed here, paste them and we'll integrate.
+             For now we keep placeholders matching the numbered entries from the original. -->
+        <div class="clue"><strong>1.</strong> — Oziq-ovqat mahsulotlarini ishlab chiqaruvchi jodagi tozalik qoidalari tizimi.</div>
+        <div class="clue"><strong>2.</strong> — 2025-yil sentabr oyida maktabgacha ta'lim muassasalarida sodir bo'lgan voqea turi.</div>
+        <div class="clue"><strong>3.</strong> — Oziq-ovqat mahsulotlarinisovuqda saqlash jarayoni.</div>
+        <div class="clue"><strong>4.</strong> — Oziq-ovqat mahsulotlari yorlig‘ida ko‘rsatiladigan “muddati tugash sanasi”.</div>
+        <div class="clue"><strong>5.</strong> — Oziq-ovqat mahsulotlari sifati va xavfsizligini boshqarish tizimi nomi.</div>
+        <div class="clue"><strong>6.</strong> — Oziq-ovqat mahsulotlari ishlab chiqaruvchilari uchun gigiyenik nazoratni belgilovchi qisqartma (xalqaro standart).</div>
+        <div class="clue"><strong>7.</strong> — Mahsulotga shisha yoki metall bo‘lagi tushishi natijasidagi xavf turi.</div>
+        <div class="clue"><strong>8.</strong> — Oziq-ovqat mahsulotlarini xavfsiz tayyorlashga oid fan yoki yo‘nalish.</div>
+        <div class="clue"><strong>9.</strong> — Oziq-ovqat tarkibida pestitsid yoki nitratlar ko‘payib ketgan holat — bu ... xavfidir.</div>
+        <div class="clue"><strong>10.</strong> — Mahsulot tarkibida mikroorganizmlar bo‘lsa, bu ... xavf deyiladi.</div>
+        <div class="clue"><strong>11.</strong> — Oziq-ovqat bilan bog‘liq sog‘liqni saqlash masalalari bilan shug‘ullanadigan xalqaro tashkilot qisqartmasi.</div>
+      </div>
+      <div class="controls">
+        <button class="btn secondary" id="clear">Tozalash</button>
+      </div>
+    </div>
+  </aside>
+</div>
+</div>
+
+<script>
+/*
+  Start page navigation
+*/
+document.getElementById('startBtn').addEventListener('click', function(){
+  document.getElementById('startPage').style.display = 'none';
+  document.getElementById('gamePage').classList.add('active');
+});
+
+/*
+  Minimal JS to allow entering letters into the "let" cells and simple reveal/clear buttons.
+  All code is embedded inline in single HTML as you requested.
+*/
+(function(){
+  // Turn each .let cell into an editable input box (if not already letter-filled)
+  const letCells = Array.from(document.querySelectorAll('.cross-table td.let'));
+  letCells.forEach(td => {
+    // If cell already contains a letter (from the doc), preserve it but allow editing.
+    const content = td.textContent.trim();
+    td.innerHTML = ''; // clear and insert input
+    const inp = document.createElement('input');
+    inp.type = 'text'; inp.maxLength = 1;
+    inp.value = content || '';
+    inp.style.background='transparent';
+    inp.style.border='0';
+    inp.style.textAlign='center';
+    inp.style.fontWeight='700';
+    inp.style.fontSize='16px';
+    inp.style.textTransform='uppercase';
+    inp.addEventListener('input', e=>{
+      e.target.value = (e.target.value||'').toUpperCase().slice(0,1);
+    });
+    td.appendChild(inp);
+    // accessibility
+    td.setAttribute('role','gridcell');
+  });
+
+  // Reveal: fill all inputs with original letters where available
+  document.getElementById('reveal').addEventListener('click', ()=>{
+    letCells.forEach(td=>{
+      const orig = td.getAttribute('data-orig') || '';
+      const input = td.querySelector('input');
+      // If the original letter was present as plain text before we cleared, we preserved it in value;
+      // but to be safe, if input already has something, leave it; else set to placeholder from class letter.
+      if(input){
+        // If input is empty and td had a letter attribute, fill from that; otherwise, do nothing.
+        if(!input.value){
+          // try to find a visible letter inside attribute 'data-fill' (if set)
+          const pre = td.dataset && td.dataset.letter;
+          if(pre) input.value = pre.toUpperCase();
+          else {
+            // nothing to reveal for unknown cells — we keep empty
+          }
+        }
+      }
+    });
+    // Additionally, highlight revealed (visually)
+    letCells.forEach(td=>td.style.transition='background .18s ease');
+  });
+
+  document.getElementById('clear').addEventListener('click', ()=>{
+    letCells.forEach(td=>{
+      const input = td.querySelector('input');
+      if(input) input.value = '';
+      td.style.background = '';
+    });
+  });
+
+  // Make keyboard navigation (arrow keys) move between inputs
+  document.addEventListener('keydown', function(e){
+    const active = document.activeElement;
+    if(!active || active.tagName.toLowerCase()!=='input') return;
+    const td = active.closest('td');
+    if(!td) return;
+    const allInputs = Array.from(document.querySelectorAll('.cross-table td.let input'));
+    const idx = allInputs.indexOf(active);
+    if(idx<0) return;
+    if(e.key === 'ArrowRight'){ e.preventDefault(); if(allInputs[idx+1]) allInputs[idx+1].focus(); }
+    if(e.key === 'ArrowLeft'){ e.preventDefault(); if(allInputs[idx-1]) allInputs[idx-1].focus(); }
+    if(e.key === 'ArrowDown'){ e.preventDefault();
+      // move approx n columns down: find element below by comparing bounding boxes
+      const rect = td.getBoundingClientRect();
+      let below = null;
+      for(let el of allInputs){
+        const tdel = el.closest('td');
+        const r = tdel.getBoundingClientRect();
+        if(Math.abs(r.left - rect.left) < 6 && r.top > rect.top){
+          if(!below || r.top < below.getBoundingClientRect().top) below = el;
+        }
+      }
+      if(below) below.focus();
+    }
+    if(e.key === 'ArrowUp'){ e.preventDefault();
+      const rect = td.getBoundingClientRect();
+      let above = null;
+      for(let el of allInputs){
+        const tdel = el.closest('td');
+        const r = tdel.getBoundingClientRect();
+        if(Math.abs(r.left - rect.left) < 6 && r.top < rect.top){
+          if(!above || r.top > above.getBoundingClientRect().top) above = el;
+        }
+      }
+      if(above) above.focus();
+    }
+  });
+
+})();
+</script>
+
+</body>
+</html>
